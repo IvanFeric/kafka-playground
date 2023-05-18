@@ -45,15 +45,15 @@ public class Program
         List<TopicPartition> lostPartitions = new();
 
         using var consumer = new ConsumerBuilder<string, byte[]>(consumerConfig)
-            .SetPartitionsRevokedHandler((consumer, topicPartitions) =>
+            .SetPartitionsRevokedHandler((consumer, topicPartitionOffsets) =>
             {
-                Console.WriteLine($"Partitions revoked! Consumer {consumer.Name}: {string.Join(", ", consumer.Assignment.Select(a => $"({a.Topic}, {a.Partition})"))}\r\nTopicPartitions: {string.Join(", ", topicPartitions.Select(a => $"({a.Topic}, {a.Partition})"))}");
+                Console.WriteLine($"Partitions revoked! Consumer {consumer.Name}: {string.Join(", ", consumer.Assignment.Select(a => $"({a.Topic}, {a.Partition})"))}\r\nTopicPartitions: {string.Join(", ", topicPartitionOffsets.Select(a => $"({a.Topic}, {a.Partition})"))}");
                 
                 try
                 {
                     foreach (var topicPartition in consumer.Assignment)
                     {
-                        if (topicPartitions.Any(tp => topicPartition.Topic == tp.Topic && topicPartition.Partition == tp.Partition))
+                        if (topicPartitionOffsets.Any(tpo => topicPartition == tpo.TopicPartition))
                         {
                             lostPartitions.Add(topicPartition);
                             Console.WriteLine($"Committing ({topicPartition.Topic}, {topicPartition.Partition})");
