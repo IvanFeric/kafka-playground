@@ -31,7 +31,7 @@ public class Program
         await consumer;
     }
 
-    private async static Task StartConsumer(JsonEventFormatter formatter, CancellationToken ct)
+    private static void StartConsumer(JsonEventFormatter formatter, CancellationToken ct)
     {
         var consumerConfig = new ConsumerConfig
         {
@@ -112,21 +112,29 @@ public class Program
 
                 if (batchNumber == 0)
                 {
-                    var filteredResults = results.Where(r => !lostPartitions.Any(tp => r.Topic == tp.Topic && r.Partition == tp.Partition)).ToList();
-
-                    var resultsWithLatestOffsetPerPartition = filteredResults.GroupBy(x => x.Partition.Value)
-                        .Select(group => group.MaxBy(y => y.Offset.Value))
-                        .Where(x => x != null);
-                    foreach (var result in resultsWithLatestOffsetPerPartition)
-                    {
-                        Console.WriteLine($"Storing offset for topic {result.Topic}, partition {result.Partition}");
-                        consumer.StoreOffset(result);
-                    }
+                    StoreOffsets();
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception when consuming:\n{ex}");
+            }
+        }
+
+        StoreOffsets();
+        consumer.Commit();
+
+        void StoreOffsets()
+        {
+            var filteredResults = results.Where(r => !lostPartitions.Any(tp => r.Topic == tp.Topic && r.Partition == tp.Partition)).ToList();
+
+            var resultsWithLatestOffsetPerPartition = filteredResults.GroupBy(x => x.Partition.Value)
+                .Select(group => group.MaxBy(y => y.Offset.Value))
+                .Where(x => x != null);
+            foreach (var result in resultsWithLatestOffsetPerPartition)
+            {
+                Console.WriteLine($"Storing offset for topic {result.Topic}, partition {result.Partition}");
+                consumer.StoreOffset(result);
             }
         }
     }
