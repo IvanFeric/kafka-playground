@@ -43,6 +43,7 @@ public class Program
         using var consumer = new ConsumerBuilder<Null, string>(consumerConfig)
             .SetPartitionsRevokedHandler((consumer, topicPartitionOffsets) =>
             {
+                if (ct.IsCancellationRequested) return;
                 Console.WriteLine($"Partitions revoked! Consumer {consumer.Name}: {string.Join(", ", consumer.Assignment.Select(a => $"({a.Topic}, {a.Partition})"))}\r\nTopicPartitions: {string.Join(", ", topicPartitionOffsets.Select(a => $"({a.Topic}, {a.Partition})"))}");
 
                 try
