@@ -122,7 +122,7 @@ public class Program
         }
 
         StoreOffsets();
-        consumer.Commit();
+        consumer.Close();
 
         void StoreOffsets()
         {
